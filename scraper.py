@@ -23,7 +23,6 @@ class XiorScraper:
         options = webdriver.ChromeOptions()
         options.add_argument("window-size=1920x1480")
         options.add_argument("disable-dev-shm-usage")
-        options.headless = True
         # options.headless = True
         self.browser = webdriver.Chrome(
             options=options, executable_path=ChromeDriverManager().install()
@@ -53,16 +52,16 @@ class XiorScraper:
         if 'city' in data:
             self.click_option("city", data['city'])
         self.click_option("unlock_key", "Without code")
+
+        time.sleep(1)
         search_results = self.browser.find_element(By.ID, "search-results")
-        try:
-            results = search_results.find_elements(By.CLASS_NAME, "card")
-            ls = [
-                {"url": result.find_element(By.TAG_NAME, "a").get_attribute("href")}
-                for result in results]
-            print(ls)
-            return ls
-        except WebDriverException:
-            return []
+        time.sleep(1)
+        results = search_results.find_elements(By.CLASS_NAME, "card")
+        lista = []
+        for result in results:
+            lista.append({"url": result.find_element(By.TAG_NAME, "a").get_attribute("href")})
+        return lista
+
 
     def get_data_delft(self):
         return self.get_results(self.data_delft)
@@ -75,7 +74,7 @@ if __name__ == "__main__":
     scraper = None
     try:
         scraper = XiorScraper()
-        scraper.get_working_data()
+        print(scraper.get_working_data())
     except:
         traceback.print_exc()
     finally:
