@@ -2,3 +2,4 @@ venv/
 headers.txt
 .idea/
 __pycache__/
+.env

@@ -1,3 +1,4 @@
+import os
 from threading import Thread
 from time import sleep
 
@@ -6,77 +7,91 @@ from telegram.ext.commandhandler import CommandHandler
 from telegram.ext.updater import Updater
 from telegram.update import Update
 
-import scraper
+from scraper import XiorScraper
 
-updater = Updater("5389706742:AAHyWq3hmLXTFShnt33ZdLGBzArRQ4ZmreU", use_context=True)
-stop_thread = False
-running_thread = None
-
-
-def start(update: Update, context: CallbackContext):
-    global stop_thread
-    global running_thread
-    stop_thread = False
-    update.message.reply_text(
-        "Hello this is a xior bot that scrapes the https://www.xior-booking.com/# for Netherlands + Delft")
-    running_thread = Thread(target=daemon_runner, args=(update, lambda: stop_thread))
-    running_thread.start()
+PORT = int(os.environ.get('PORT', 8443))
+telegram_token = os.environ.get("TG_TOKEN")
 
 
-def help(update: Update, context: CallbackContext):
-    update.message.reply_text("""Available Commands :-
-    /check - Checks on the main website if we can actually get something
-    /help - Print this page
-    /runDelft - Runs check on delft
-    /stop - Stops the bot""")
+class TelegramHandler:
 
+    def __init__(self):
+        self.stop_thread = False
+        self.running_thread = None
+        self.scraper = XiorScraper()
+        self.updater = Updater(telegram_token, use_context=True)
 
-def daemon_runner(update: Update, stop):
-    time = 0
-    while True:
-        if stop():
-            break
-        data = scraper.get_delft()
-        if time > 3600 * 2:
-            update.message.reply_text(f"I have been trying for more than 2 hours and still nothing")
-            time = 0
+        dp = self.updater.dispatcher
+        dp.add_handler(CommandHandler('start', self.start))
+        dp.add_handler(CommandHandler('help', self.help))
+        dp.add_handler(CommandHandler('run', self.run_delft))
+        dp.add_handler(CommandHandler('check', self.run_normal_check))
+        dp.add_handler(CommandHandler('stop', self.stop))
+
+    def start_polling(self):
+        self.updater.start_polling()
+
+    def run_heroku(self):
+        self.updater.start_webhook(listen="0.0.0.0",
+                                   port=int(PORT),
+                                   url_path=telegram_token,
+                                   webhook_url='https://bot-delft-xior.herokuapp.com/' + telegram_token)
+
+        self.updater.idle()
+
+    def start(self, update: Update, context: CallbackContext):
+        self.stop_thread = False
+        update.message.reply_text(
+            "Hello this is a xior bot that scrapes the https://www.xior-booking.com/# for Netherlands + Delft")
+        running_thread = Thread(target=self.daemon_runner, args=(update, lambda: self.stop_thread))
+        running_thread.start()
+
+    def help(self, update: Update, context: CallbackContext):
+        update.message.reply_text("""Available Commands 
+• /start  - starts daemon
+• /check - Checks on the main website if we can actually get something
+• /help - Print this page
+• /run - Checks offers for delft that do not require code
+• /stop - Stops the bot""")
+
+    def daemon_runner(self, update: Update, stop):
+        time = 0
+        while True:
+            if stop():
+                break
+            data = self.scraper.get_data_delft()
+            if time > 3600 * 2:
+                update.message.reply_text(f"I have been trying for more than 2 hours and still nothing")
+                time = 0
+            if len(data) > 0:
+                update.message.reply_text(f"I got this data for *delft* \n *Check website!!* \n{data}",
+                                          parse_mode='markdown')
+            time += 20
+            sleep(20)
+
+    def run_delft(self, update: Update, context: CallbackContext):
+        data = self.scraper.get_data_delft()
         if len(data) > 0:
             update.message.reply_text(f"I got this data for *delft* \n *Check website!!* \n{data}",
                                       parse_mode='markdown')
-        time += 20
-        sleep(20)
+        else:
+            update.message.reply_text("There is nothing for delft right now :(")
+
+    def run_normal_check(self, update: Update, context: CallbackContext):
+        data = self.scraper.get_data_delft()
+        if len(data) > 0:
+            update.message.reply_text(f"I got this data for normal website\n *Check website!!* \n{data}",
+                                      parse_mode="markdown")
+        else:
+            update.message.reply_text("There is nothing for the whole website. Code might have crashed :(")
+
+    def stop(self, update: Update, context: CallbackContext):
+        self.stop_thread = True
+        self.running_thread.join()
+        update.message.reply_text(
+            "Stopped the daemon")
 
 
-def run_delft(update: Update, context: CallbackContext):
-    data = scraper.get_delft()
-    if len(data) > 0:
-        update.message.reply_text(f"I got this data for *delft* \n *Check website!!* \n{data}", parse_mode='markdown')
-    else:
-        update.message.reply_text("There is nothing for delft right now :(")
-
-
-def run_normal_check(update: Update, context: CallbackContext):
-    data = scraper.get_working_data()
-    if len(data) > 0:
-        update.message.reply_text(f"I got this data for normal website\n *Check website!!* \n{data}",
-                                  parse_mode="markdown")
-    else:
-        update.message.reply_text("There is nothing for the whole website. Code might have crashed :(")
-
-
-def stop(update: Update, context: CallbackContext):
-    global stop_thread
-    stop_thread = True
-
-    running_thread.join()
-    update.message.reply_text(
-        "Stopped the daemon")
-
-
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(CommandHandler('help', help))
-updater.dispatcher.add_handler(CommandHandler('runDelft', run_delft))
-updater.dispatcher.add_handler(CommandHandler('check', run_normal_check))
-updater.dispatcher.add_handler(CommandHandler('stop', stop))
-
-updater.start_polling()
+if __name__ == "__main__":
+    # TelegramHandler().start_polling()
+    TelegramHandler().run_heroku()
