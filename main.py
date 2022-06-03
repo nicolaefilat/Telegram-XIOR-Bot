@@ -60,8 +60,8 @@ class TelegramHandler:
             if stop():
                 break
             data = self.scraper.get_data_delft()
-            if time > 3600 * 2:
-                update.message.reply_text(f"I have been trying for more than 2 hours and still nothing")
+            if time > 20:
+                update.message.reply_text(f"I have been trying for more than {time} seconds!")
                 time = 0
             if len(data) > 0:
                 update.message.reply_text(f"I got this data for *delft* \n *Check website!!* \n{data}",
@@ -78,9 +78,9 @@ class TelegramHandler:
             update.message.reply_text("There is nothing for delft right now :(")
 
     def run_normal_check(self, update: Update, context: CallbackContext):
-        data = self.scraper.get_data_delft()
+        data = self.scraper.get_working_data()
         if len(data) > 0:
-            update.message.reply_text(f"I got this data for normal website\n *Check website!!* \n{data}",
+            update.message.reply_text(f"I got this data for check data from Germany. \n{data}",
                                       parse_mode="markdown")
         else:
             update.message.reply_text("There is nothing for the whole website. Code might have crashed :(")
@@ -88,8 +88,7 @@ class TelegramHandler:
     def stop(self, update: Update, context: CallbackContext):
         self.stop_thread = True
         self.running_thread.join()
-        update.message.reply_text(
-            "Stopped the daemon")
+        update.message.reply_text("Stopped the daemon")
 
 
 if __name__ == "__main__":
