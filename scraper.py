@@ -2,7 +2,6 @@ import time
 import traceback
 
 from selenium import webdriver
-from selenium.common.exceptions import *
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
@@ -46,7 +45,9 @@ class XiorScraper:
         option.click()
 
     def get_results(self, data):
+        self.browser.delete_all_cookies()
         self.browser.refresh()
+        time.sleep(1)
         if 'country' in data:
             self.click_option("country", data['country'])
         if 'city' in data:
@@ -61,7 +62,6 @@ class XiorScraper:
         for result in results:
             lista.append({"url": result.find_element(By.TAG_NAME, "a").get_attribute("href")})
         return lista
-
 
     def get_data_delft(self):
         return self.get_results(self.data_delft)
