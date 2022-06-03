@@ -60,7 +60,7 @@ class TelegramHandler:
             if self.stop_thread:
                 break
             data = self.scraper.get_data_delft()
-            if time > 30:
+            if time > 60 * 2:
                 update.message.reply_text(f"I have been trying for more than {time} seconds!")
                 time = 0
             if len(data) > 0:
