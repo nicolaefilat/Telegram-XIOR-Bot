@@ -1,0 +1,1 @@
+require('heroku-self-ping').default("https://bot-delft-xior.herokuapp.com/", options = {interval: 60});

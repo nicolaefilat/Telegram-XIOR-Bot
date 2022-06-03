@@ -1,0 +1,9 @@
+{
+  "version": "2.0.1",
+  "scripts": {
+    "start": "node self_ping.js"
+  },
+  "dependencies": {
+    "heroku-self-ping": "^2.0.1"
+  }
+}

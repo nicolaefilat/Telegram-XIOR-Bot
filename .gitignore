@@ -3,3 +3,5 @@ headers.txt
 .idea/
 __pycache__/
 .env
+/node_modules/
+geckodriver.log

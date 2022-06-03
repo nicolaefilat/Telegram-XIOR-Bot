@@ -57,17 +57,17 @@ class TelegramHandler:
     def daemon_runner(self, update: Update, stop):
         time = 0
         while True:
-            if stop():
+            if self.stop_thread:
                 break
             data = self.scraper.get_data_delft()
-            if time > 20:
+            if time > 30:
                 update.message.reply_text(f"I have been trying for more than {time} seconds!")
                 time = 0
             if len(data) > 0:
                 update.message.reply_text(f"I got this data for *delft* \n *Check website!!* \n{data}",
                                           parse_mode='markdown')
-            time += 20
-            sleep(20)
+            time += 30
+            sleep(30)
 
     def run_delft(self, update: Update, context: CallbackContext):
         data = self.scraper.get_data_delft()
